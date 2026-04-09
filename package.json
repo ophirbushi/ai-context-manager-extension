@@ -1,23 +1,239 @@
 {
   "name": "ai-context-manager",
-  "displayName": "\"AI Context Manager\"",
-  "description": "",
-  "version": "0.0.1",
+  "displayName": "AI Context Manager",
+  "description": "Curate, save, and export focused context windows for AI coding assistants. Create reusable Context Blueprints to control exactly what your AI sees.",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.115.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Machine Learning"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "workspaceContains:.vscode/contexts"
+  ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiContextManager",
+          "title": "AI Context",
+          "icon": "$(target)"
+        }
+      ]
+    },
+    "views": {
+      "aiContextManager": [
+        {
+          "type": "webview",
+          "id": "aiContextManager.controlPanel",
+          "name": "Controls",
+          "icon": "$(settings-gear)"
+        },
+        {
+          "id": "aiContextManager.contextTree",
+          "name": "Context Map",
+          "icon": "$(list-tree)"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "ai-context-manager.helloWorld",
-        "title": "Hello World"
+        "command": "aiContextManager.createBlueprint",
+        "title": "Create Context Blueprint",
+        "category": "AI Context",
+        "icon": "$(add)"
+      },
+      {
+        "command": "aiContextManager.switchBlueprint",
+        "title": "Switch Context Blueprint",
+        "category": "AI Context",
+        "icon": "$(list-selection)"
+      },
+      {
+        "command": "aiContextManager.deleteBlueprint",
+        "title": "Delete Context Blueprint",
+        "category": "AI Context",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "aiContextManager.markSelection",
+        "title": "Mark Selection for AI Context",
+        "category": "AI Context",
+        "icon": "$(add)"
+      },
+      {
+        "command": "aiContextManager.markFile",
+        "title": "Add File to AI Context",
+        "category": "AI Context",
+        "icon": "$(file-add)"
+      },
+      {
+        "command": "aiContextManager.markFolder",
+        "title": "Add Folder to AI Context",
+        "category": "AI Context",
+        "icon": "$(file-directory-create)"
+      },
+      {
+        "command": "aiContextManager.removeFromContext",
+        "title": "Remove from AI Context",
+        "category": "AI Context",
+        "icon": "$(close)"
+      },
+      {
+        "command": "aiContextManager.pinEntry",
+        "title": "Toggle Pin (Force Deep Dive)",
+        "category": "AI Context",
+        "icon": "$(pin)"
+      },
+      {
+        "command": "aiContextManager.exportClipboard",
+        "title": "Export Context to Clipboard",
+        "category": "AI Context",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "aiContextManager.expandFromHere",
+        "title": "Expand Context from Here",
+        "category": "AI Context",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "aiContextManager.semanticExpand",
+        "title": "Ask AI for Semantic Links",
+        "category": "AI Context",
+        "icon": "$(hubot)"
+      },
+      {
+        "command": "aiContextManager.mergeStaged",
+        "title": "Merge All Suggestions into Context",
+        "category": "AI Context",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "aiContextManager.mergeStagedEntry",
+        "title": "Add to Context",
+        "category": "AI Context",
+        "icon": "$(add)"
+      },
+      {
+        "command": "aiContextManager.discardStaged",
+        "title": "Discard All Suggestions",
+        "category": "AI Context",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "aiContextManager.discardStagedEntry",
+        "title": "Discard Suggestion",
+        "category": "AI Context",
+        "icon": "$(close)"
+      },
+      {
+        "command": "aiContextManager.compressEntry",
+        "title": "Toggle Compression",
+        "category": "AI Context",
+        "icon": "$(fold)"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "aiContextManager.markSelection",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "aiContextManager.expandFromHere",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "aiContextManager.markSelection",
+          "when": "editorHasSelection",
+          "group": "aiContext@1"
+        },
+        {
+          "command": "aiContextManager.markFile",
+          "group": "aiContext@2"
+        },
+        {
+          "command": "aiContextManager.expandFromHere",
+          "group": "aiContext@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "aiContextManager.markFile",
+          "when": "!explorerResourceIsFolder",
+          "group": "aiContext@1"
+        },
+        {
+          "command": "aiContextManager.markFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "aiContext@1"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "aiContextManager.createBlueprint",
+          "when": "view == aiContextManager.contextTree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "aiContextManager.exportClipboard",
+          "when": "view == aiContextManager.contextTree",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "aiContextManager.removeFromContext",
+          "when": "view == aiContextManager.contextTree && viewItem =~ /^context/",
+          "group": "inline@10"
+        },
+        {
+          "command": "aiContextManager.pinEntry",
+          "when": "view == aiContextManager.contextTree && viewItem =~ /^contextFile/",
+          "group": "inline@1"
+        },
+        {
+          "command": "aiContextManager.expandFromHere",
+          "when": "view == aiContextManager.contextTree && viewItem =~ /^contextFile/",
+          "group": "inline@2"
+        },
+        {
+          "command": "aiContextManager.compressEntry",
+          "when": "view == aiContextManager.contextTree && viewItem =~ /^contextFile/",
+          "group": "inline@3"
+        },
+        {
+          "command": "aiContextManager.mergeStagedEntry",
+          "when": "view == aiContextManager.contextTree && viewItem == stagedEntry",
+          "group": "inline@1"
+        },
+        {
+          "command": "aiContextManager.discardStagedEntry",
+          "when": "view == aiContextManager.contextTree && viewItem == stagedEntry",
+          "group": "inline@2"
+        },
+        {
+          "command": "aiContextManager.mergeStaged",
+          "when": "view == aiContextManager.contextTree && viewItem == stagedSection",
+          "group": "inline@1"
+        },
+        {
+          "command": "aiContextManager.discardStaged",
+          "when": "view == aiContextManager.contextTree && viewItem == stagedSection",
+          "group": "inline@2"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
