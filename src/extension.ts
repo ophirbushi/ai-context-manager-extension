@@ -52,19 +52,24 @@ export async function activate(context: vscode.ExtensionContext) {
 				title: 'New Context Blueprint',
 				prompt: 'Enter a name for this context (e.g., "auth-feature", "fix-checkout-bug")',
 				placeHolder: 'my-feature',
+				ignoreFocusOut: true,
 				validateInput: (value) => {
-					if (!value.trim()) { return 'Name is required'; }
+					if (!value.trim()) { return undefined; } // handled after submission
 					if (manager.blueprints.some(b => b.name === value.trim())) {
 						return 'A blueprint with this name already exists';
 					}
 					return undefined;
 				}
 			});
-			if (!name) { return; }
+			if (!name?.trim()) { return; }
 
-			const bp = await manager.create(name.trim());
-			await manager.activate(bp.name);
-			vscode.window.setStatusBarMessage(`$(check) Created and activated "${bp.name}"`, 3000);
+			try {
+				const bp = await manager.create(name.trim());
+				await manager.activate(bp.name);
+				vscode.window.setStatusBarMessage(`$(check) Created and activated "${bp.name}"`, 3000);
+			} catch (err) {
+				vscode.window.showErrorMessage(`Failed to create blueprint: ${err}`);
+			}
 		}),
 
 		vscode.commands.registerCommand('aiContextManager.switchBlueprint', async () => {

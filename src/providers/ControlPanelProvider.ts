@@ -68,10 +68,15 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
 			<body>
 				<div class="empty-state">
 					<p>No active context blueprint</p>
-					<button class="primary" onclick="post({type:'createBlueprint'})">Create Blueprint</button>
-					${blueprintNames.length > 0 ? `<button onclick="post({type:'switchBlueprint'})">Switch Blueprint</button>` : ''}
+					<button class="primary" id="btn-create">Create Blueprint</button>
+					${blueprintNames.length > 0 ? `<button id="btn-switch">Switch Blueprint</button>` : ''}
 				</div>
-				<script nonce="${nonce}">const vscode=acquireVsCodeApi();function post(m){vscode.postMessage(m);}</script>
+				<script nonce="${nonce}">
+				const vscode = acquireVsCodeApi();
+				function post(m) { vscode.postMessage(m); }
+				document.getElementById('btn-create')?.addEventListener('click', () => post({type:'createBlueprint'}));
+				document.getElementById('btn-switch')?.addEventListener('click', () => post({type:'switchBlueprint'}));
+				</script>
 			</body></html>`;
 		}
 
@@ -90,6 +95,9 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
 
 		const entryCount = bp.entries.length;
 		const tokenEstimate = this.estimateTokens(bp);
+		const currentFidelity = bp.fidelity;
+		const currentPreset = bp.directive.preset;
+		const currentCustom = bp.directive.custom ?? '';
 
 		return /* html */`<!DOCTYPE html>
 		<html><head><meta charset="UTF-8">
@@ -98,7 +106,7 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
 		<body>
 			<div class="header">
 				<div class="blueprint-row">
-					<span class="blueprint-name" title="Click to switch" onclick="post({type:'switchBlueprint'})">${escapeHtml(bp.name)}</span>
+					<span class="blueprint-name" id="btn-name" title="Click to switch">${escapeHtml(bp.name)}</span>
 					<span class="badge">${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}</span>
 				</div>
 				<div class="token-bar ${tokenEstimate > 16000 ? 'red' : tokenEstimate > 4000 ? 'yellow' : 'green'}">
@@ -110,8 +118,8 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
 				<label>Fidelity</label>
 				<div class="segmented">
 					${fidelityOptions.map(f => `
-						<button class="seg ${bp.fidelity === f.value ? 'active' : ''}"
-							onclick="post({type:'setFidelity',value:'${f.value}'})">
+						<button class="seg ${currentFidelity === f.value ? 'active' : ''}"
+							data-fidelity="${f.value}">
 							${f.icon} ${f.label}
 						</button>
 					`).join('')}
@@ -120,9 +128,9 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
 
 			<div class="section">
 				<label>AI Directive</label>
-				<select onchange="post({type:'setDirectivePreset',value:this.value})">
+				<select id="sel-directive">
 					${presets.map(p => `
-						<option value="${p.value}" ${bp.directive.preset === p.value ? 'selected' : ''}>
+						<option value="${p.value}" ${currentPreset === p.value ? 'selected' : ''}>
 							${p.icon} ${p.label}
 						</option>
 					`).join('')}
@@ -130,20 +138,38 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
 			</div>
 
 			<div class="section collapsible">
-				<details ${bp.directive.custom ? 'open' : ''}>
+				<details ${currentCustom ? 'open' : ''}>
 					<summary>+ Custom Instructions</summary>
-					<textarea rows="3" placeholder="e.g. Ensure backward compatibility with v1 API..."
-						onchange="post({type:'setDirectiveCustom',value:this.value})">${escapeHtml(bp.directive.custom ?? '')}</textarea>
+					<textarea id="txt-custom" rows="3" placeholder="e.g. Ensure backward compatibility with v1 API...">${escapeHtml(currentCustom)}</textarea>
 				</details>
 			</div>
 
 			<div class="actions">
-				<button class="primary export" onclick="post({type:'export'})">
+				<button class="primary export" id="btn-export">
 					📋 Export to Clipboard
 				</button>
 			</div>
 
-			<script nonce="${nonce}">const vscode=acquireVsCodeApi();function post(m){vscode.postMessage(m);}</script>
+			<script nonce="${nonce}">
+			const vscode = acquireVsCodeApi();
+			function post(m) { vscode.postMessage(m); }
+
+			document.getElementById('btn-name')?.addEventListener('click', () => post({type:'switchBlueprint'}));
+
+			document.querySelectorAll('[data-fidelity]').forEach(btn => {
+				btn.addEventListener('click', () => post({type:'setFidelity', value: btn.getAttribute('data-fidelity')}));
+			});
+
+			document.getElementById('sel-directive')?.addEventListener('change', function() {
+				post({type:'setDirectivePreset', value: this.value});
+			});
+
+			document.getElementById('txt-custom')?.addEventListener('change', function() {
+				post({type:'setDirectiveCustom', value: this.value});
+			});
+
+			document.getElementById('btn-export')?.addEventListener('click', () => post({type:'export'}));
+			</script>
 		</body></html>`;
 	}
 
